@@ -997,6 +997,13 @@ sub check_needs()
 	recommend_sphinx_version($virtualenv_cmd);
 	printf "\n";
 
+	print "need: $need\n";
+	printf "\n";
+
+	printf "Hello\n";
+	printf "---- %s -----", which("sphinx-build-3");
+	printf "hello\n";
+
 	print "All optional dependencies are met.\n" if (!$optional);
 
 	if ($need == 1) {
