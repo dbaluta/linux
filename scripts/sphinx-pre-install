@@ -964,22 +964,52 @@ sub check_needs()
 		}
 	}
 
+
+	print "need (1) $need\n";
 	# Check for needed programs/tools
 	check_perl_module("Pod::Usage", 0);
+
+	print "need (2) $need\n";
+	# Check for needed programs/tools
 	check_program("make", 0);
+
+	print "need (3) $need\n";
+	# Check for needed programs/tools
 	check_program("gcc", 0);
+
+	print "need (4) $need\n";
+	# Check for needed programs/tools
 	check_python_module("sphinx_rtd_theme", 1) if (!$virtualenv);
+
+	print "need (5) $need\n";
+	# Check for needed programs/tools
 	check_program("dot", 1);
+
+	print "need (6) $need\n";
+	# Check for needed programs/tools
 	check_program("convert", 1);
 
+	print "need (7) $need\n";
+	# Check for needed programs/tools
 	# Extra PDF files - should use 2 for is_optional
 	check_program("xelatex", 2) if ($pdf);
+
+	print "need (8) $need\n";
+	# Check for needed programs/tools
 	check_program("rsvg-convert", 2) if ($pdf);
+
+	print "need (9) $need\n";
+	# Check for needed programs/tools
 	check_program("latexmk", 2) if ($pdf);
 
+	print "need (10) $need\n";
+	# Check for needed programs/tools
 	# Do distro-specific checks and output distro-install commands
 	check_distros();
 
+
+	print "need (11) $need\n";
+	# Check for needed programs/tools
 	if (!$python_cmd) {
 		if ($need == 1) {
 			die "Can't build as $need mandatory dependency is missing";
@@ -988,13 +1018,21 @@ sub check_needs()
 		}
 	}
 
+
+
+
+	print "need (12) $need\n";
 	# Check if sphinx-build is called sphinx-build-3
 	if ($need_symlink) {
 		printf "\tsudo ln -sf %s /usr/bin/sphinx-build\n\n",
 		       which("sphinx-build-3");
 	}
 
+
+	print "need (13) $need\n";
 	recommend_sphinx_version($virtualenv_cmd);
+
+	print "need (14) $need\n";
 	printf "\n";
 
 	print "need: $need\n";
@@ -1003,7 +1041,7 @@ sub check_needs()
 	printf "Hello\n";
 	printf "python: ---- %s -----\n", which("python");
 	printf "python3: ---- %s -----\n", which("python3-sphinx");
-	print  "list files --- %s ----\n", `ls -al /usr/bin/python`
+	print  "list files --- %s ----\n", system("ls -al /usr/bin/python");
 	printf "sphinx-build-3---- %s -----\n", which("sphinx-build-3");
 	printf "hello\n";
 
