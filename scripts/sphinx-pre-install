@@ -1001,7 +1001,10 @@ sub check_needs()
 	printf "\n";
 
 	printf "Hello\n";
-	printf "---- %s -----", which("sphinx-build-3");
+	printf "python: ---- %s -----\n", which("python");
+	printf "python3: ---- %s -----\n", which("python3-sphinx");
+	print  "list files --- %s ----\n", `ls -al /usr/bin/python`
+	printf "sphinx-build-3---- %s -----\n", which("sphinx-build-3");
 	printf "hello\n";
 
 	print "All optional dependencies are met.\n" if (!$optional);
