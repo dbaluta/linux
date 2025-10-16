@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 name: Linux Kernel Patch CI
-=======
-ame: Linux Kernel Patch CI
->>>>>>> 41238ed4ff7d (.github/workflows: Add new CI)
 
 on:
   pull_request:
