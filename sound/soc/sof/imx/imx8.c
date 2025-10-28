@@ -13,6 +13,8 @@
 #include <linux/mfd/syscon.h>
 #include <linux/reset.h>
 
+//test
+//
 #include "imx-common.h"
 
 /* imx8/imx8x macros */
