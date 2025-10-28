@@ -1,0 +1,128 @@
+name: build test
+
+# yamllint disable-line rule:truthy
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  sparse-check:
+    name: "Sparse check"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install libelf
+        run: |
+          sudo apt update
+          sudo apt install -y libelf-dev
+
+      - name: Install sparse
+        run: |
+          git clone git://git.kernel.org/pub/scm/devel/sparse/sparse.git
+          git -C sparse reset --hard ce1a6720
+          BINDIR=$(pwd)/bin make -C sparse install
+          echo "$(pwd)/bin" >> $GITHUB_PATH
+
+      - name: build start
+        run: |
+          export ARCH=arm64 CROSS_COMPILE=/usr/bin/aarch64-linux-gnu-  F="-Wsparse-error -Wsparse-all -Wno-bitwise-pointer -Wno-pointer-arith -Wno-typesign -Wnoshadow -Wnoflexible-array-array -Wnoflexible-array-nested -Wnoflexible-array-sizeof -Wnoflexible-array-union -Wnotautological-compare -Wno-transparent-union -Wno-constexpr-not-const -Wno-declaration-after-statement"
+          make allmodconfig
+          make modules_prepare
+          make C=2
+
+  gcc-fanalyzer:
+    name: "GCC static -fanalyzer"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install libelf
+        run: |
+          sudo apt update
+          sudo apt install -y libelf-dev
+
+      - name: build start
+        run: |
+          export ARCH=arm64 CROSS_COMPILE=/usr/bin/aarch64-linux-gnu- KCFLAGS="-Wall -Werror -fanalyzer"
+          make allmodconfig
+          make modules_prepare
+          make
+
+  gcc-arm64:
+    name: "GCC build arm64"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch kconfig
+        uses: actions/checkout@v3
+        with:
+          repository: 'thesofproject/kconfig'
+          path: 'kconfig'
+
+      - name: Install arm64 cross compiler
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-aarch64-linux-gnu
+
+      - name: Install uuid-dev
+        run: |
+          sudo apt update
+          sudo apt install -y uuid-dev
+
+      - name: build start
+        run: |
+          export ARCH=arm64 CROSS_COMPILE=/usr/bin/aarch64-linux-gnu- KCFLAGS="-Wall -Werror"
+          export MAKEFLAGS=j"$(nproc)"
+          make defconfig
+          #bash kconfig/kconfig-sof-arm64.sh
+          make
+
+  gcc-sof-arm64-allmodconfig:
+    name: "GCC build arm64 allmodconfig"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install arm64 cross compiler
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-aarch64-linux-gnu
+
+      - name: build start
+        run: |
+          export ARCH=arm64 CROSS_COMPILE=/usr/bin/aarch64-linux-gnu- KCFLAGS="-Wall -Werror"
+          export MAKEFLAGS=j"$(nproc)"
+          make allmodconfig
+          make
+
+  clang-sof-x86_64:
+    name: "Clang build arm64"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch kconfig
+        uses: actions/checkout@v3
+        with:
+          repository: 'thesofproject/kconfig'
+          path: 'kconfig'
+
+      - name: Install libelf
+        run: |
+          sudo apt update
+          sudo apt install -y libelf-dev
+
+      - name: build start
+        run: |
+          export ARCH=arm64 CROSS_COMPILE=/usr/bin/aarch64-linux-gnu- KCFLAGS="-Wall -Werror"
+          export MAKEFLAGS=j"$(nproc)"
+          #bash kconfig/kconfig-sof-default.sh
+          #make CC=clang olddefconfig
+          make CC=clang defconfig
+          make CC=clang
