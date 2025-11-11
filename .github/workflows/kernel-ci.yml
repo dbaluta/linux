@@ -1,0 +1,85 @@
+name: Linux Kernel Patch CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # --- Job 1: Static Checks ---
+  checkpatch:
+    name: Static Check (checkpatch.pl)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history needed for diff generation
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y perl git
+
+      - name: Generate patch series from PR
+        run: |
+          BASE_BRANCH=${{ github.event.pull_request.base.ref }}
+          HEAD_BRANCH=${{ github.event.pull_request.head.ref }}
+          echo "Base: $BASE_BRANCH"
+          echo "Head: $HEAD_BRANCH"
+
+          # Create patch files representing each commit in the PR
+          git format-patch origin/$BASE_BRANCH..origin/$HEAD_BRANCH -o patches/
+
+      - name: Run checkpatch.pl
+        run: |
+          echo "Running checkpatch.pl --strict on all patches..."
+          for patch in patches/*.patch; do
+            echo "Checking $patch"
+            ./scripts/checkpatch.pl --strict "$patch" || exit 1
+          done
+
+
+  # --- Job 2: Incremental ARM64 Build ---
+  incremental-build:
+    name: Incremental Build (ARM64)
+    runs-on: ubuntu-latest
+    needs: checkpatch  # Only run if static check passes
+
+    steps:
+      - name: Checkout PR branch with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu bc flex bison libssl-dev make git
+
+      - name: Identify base and head
+        id: prinfo
+        run: |
+          echo "BASE=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
+          echo "HEAD=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+
+      - name: Generate patches from PR
+        run: |
+          git format-patch origin/$BASE..origin/$HEAD -o patches/
+
+      - name: Checkout base branch and prepare build
+        run: |
+          git checkout $BASE
+          make ARCH=arm64 defconfig
+
+      - name: Apply patches incrementally and build
+        run: |
+          set -e
+          for patch in $(ls patches/*.patch | sort); do
+            echo "Applying $patch..."
+            git am "$patch"
+
+            echo "Incremental build..."
+            make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+          done
+
